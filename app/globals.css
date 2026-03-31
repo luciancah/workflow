@@ -1,0 +1,70 @@
+:root {
+  --bg: linear-gradient(180deg, #0f172a, #111827 45%, #1e293b);
+  --panel: #0f172a;
+  --panel-2: #111827;
+  --line: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #14b8a6;
+  --accent-2: #f59e0b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-family: 'Trebuchet MS', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea {
+  color: inherit;
+  background: #111827;
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+button {
+  cursor: pointer;
+  transition: transform 0.14s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+main {
+  min-height: 100vh;
+}
+
+.layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.panel {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+

@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: workflow-postgres
+    environment:
+      POSTGRES_DB: workflow_db
+      POSTGRES_USER: workflow
+      POSTGRES_PASSWORD: workflow
+    ports:
+      - "5433:5432"
+    volumes:
+      - workflow-db-data:/var/lib/postgresql/data
+
+  conductor-postgres:
+    image: postgres:16
+    container_name: conductor-postgres
+    environment:
+      POSTGRES_DB: conductor
+      POSTGRES_USER: conductor
+      POSTGRES_PASSWORD: conductor
+
+  conductor:
+    image: ghcr.io/conductor-oss/conductor:server
+    container_name: conductor-server
+    environment:
+      CONFIG_PROP: /app/config/config.properties
+    ports:
+      - "8080:8080"
+      - "8123:8123"
+    depends_on:
+      - conductor-postgres
+    volumes:
+      - ./infra/conductor/config/config-postgres.properties:/app/config/config.properties
+
+  simulator:
+    image: node:22-alpine
+    container_name: conductor-simulator-worker
+    working_dir: /workspace
+    command: sh -c "corepack pnpm install --frozen-lockfile=false && node worker/src/runner.js"
+    depends_on:
+      - conductor
+    environment:
+      CONDUCTOR_BASE_URL: http://conductor:8080/api
+    volumes:
+      - .:/workspace
+
+  app:
+    image: node:22-alpine
+    container_name: workflow-app
+    working_dir: /workspace
+    command: sh -c "corepack pnpm install --frozen-lockfile=false && pnpm dev"
+    environment:
+      DATABASE_URL: postgres://workflow:workflow@postgres:5432/workflow_db
+      CONDUCTOR_BASE_URL: http://conductor:8080/api
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - conductor
+    volumes:
+      - .:/workspace
+    restart: unless-stopped
+
+volumes:
+  workflow-db-data:
