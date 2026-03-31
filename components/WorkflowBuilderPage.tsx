@@ -729,11 +729,11 @@ export default function WorkflowBuilderPage({ workflowId }: { workflowId: number
       </div>
 
       {loading ? (
-        <div className="wf-layout" style={{ padding: 20 }}>
+        <div className="wf-layout">
           로딩 중...
         </div>
       ) : (
-        <section className="wf-main">
+        <section className="wf-layout wf-main">
           <div className="wf-canvas-wrap">
             <div className="wf-canvas-shell">
               <div className="wf-meta-edit">

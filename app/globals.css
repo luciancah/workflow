@@ -28,9 +28,12 @@
 }
 
 html,
-body {
+body,
+#__next,
+.layout-shell {
   margin: 0;
-  min-height: 100%;
+  min-height: 100vh;
+  height: 100%;
   color: var(--foreground);
   background: linear-gradient(180deg, #020817 0%, #020617 100%);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial,
@@ -38,6 +41,9 @@ body {
 }
 
 body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
   overflow: hidden;
 }
 
@@ -66,8 +72,13 @@ textarea {
 
 .layout-shell {
   position: relative;
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 100%;
+  min-height: 0;
+  flex: 1;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .workflow-persistent-canvas {
@@ -138,8 +149,15 @@ textarea {
 
 .wf-shell {
   min-height: 100vh;
+  height: 100dvh;
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
 }
 
 .wf-toolbar {
@@ -161,15 +179,24 @@ textarea {
 .wf-layout {
   position: relative;
   width: 100%;
-  height: calc(100vh - 74px);
+  min-width: 0;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
   padding: 12px;
+  overflow: hidden;
 }
 
 .wf-main {
   display: grid;
+  height: 100%;
+  min-height: 0;
   grid-template-columns: 1fr minmax(320px, 34%);
   gap: 12px;
-  height: 100%;
+  overflow: hidden;
+  min-width: 0;
+  align-content: stretch;
+  align-items: stretch;
 }
 
 .wf-canvas-wrap {
@@ -178,6 +205,9 @@ textarea {
   background: color-mix(in oklab, var(--sidebar) 84%, transparent);
   overflow: hidden;
   position: relative;
+  min-height: 0;
+  height: 100%;
+  min-width: 0;
 }
 
 .wf-canvas-shell {
@@ -254,8 +284,13 @@ textarea.wf-input {
   backdrop-filter: blur(6px);
   display: flex;
   flex-direction: column;
+  min-width: 0;
   overflow: hidden;
   min-width: 280px;
+  min-height: 0;
+  height: 100%;
+  flex: 0 0 auto;
+  justify-content: stretch;
 }
 
 .wf-tabs {
@@ -264,6 +299,8 @@ textarea.wf-input {
   border-bottom: 1px solid var(--border);
   padding: 8px;
   background: var(--card);
+  flex: 0 0 auto;
+  overflow-x: auto;
 }
 
 .wf-tab {
@@ -284,7 +321,8 @@ textarea.wf-input {
 .wf-panel-body {
   padding: 12px;
   overflow: auto;
-  height: 100%;
+  min-height: 0;
+  flex: 1;
 }
 
 .wf-grid {

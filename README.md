@@ -14,7 +14,8 @@ workflow/
 │  ├─ page.tsx              # 루트 페이지
 │  ├─ layout.tsx
 │  ├─ workflows/
-│  │  ├─ page.tsx           # 워크플로우 목록 페이지
+│  │  ├─ page.tsx           # 워크플로우 최신 진입 라우트
+│  │  ├─ list/page.tsx      # 워크플로우 목록 페이지(분리 뷰)
 │  │  ├─ new/page.tsx       # 새 워크플로우 생성 페이지
 │  │  └─ [id]/page.tsx      # 워크플로우 빌더 페이지 라우트 진입점
 │  └─ api/
@@ -28,6 +29,10 @@ workflow/
 │        └─ [executionId]/logs/route.ts  # 캐시 로그 조회
 ├─ components/
 │  ├─ WorkflowBuilderPage.tsx # React Flow 에디터, JSON/폼 편집 탭, 실행/히스토리 탭
+│  ├─ workflow/
+│  │  ├─ edge.tsx            # 커스텀 엣지 렌더러
+│  │  ├─ node.tsx            # 커스텀 노드 렌더러
+│  │  └─ persistent-canvas.tsx # 배경 캔버스 오버레이
 │  └─ ...
 ├─ lib/
 │  ├─ workflowConverter.ts   # React Flow → Conductor DSL 변환 레이어
@@ -79,6 +84,13 @@ flowchart LR
    - `docker compose up -d --build`
 3. 웹앱 접속
    - `http://localhost:3000`
+
+## 현재 기준 업데이트(2026-03-31 기준)
+- UI 정렬: `html/body/layout-shell/wf-shell/wf-layout/wf-main/wf-right` 높이 체인을 정합화해 우측 패널 기준 100%/스크롤 이슈를 고정
+- 우측 패널 스크롤: `Properties / Code / Runs` 본문을 `overflow: auto`로 보강해 긴 로그/코드 입력 시 스크롤이 되도록 수정
+- 라우팅: `/workflows`는 최신 워크플로우 진입 규칙으로 유지, 목록은 `/workflows/list`로 분리
+- 실행/동기화: 실행 요청/조회 API는 Conductor 상태를 기준으로 폴링 동기화하며, 워크플로우 미등록 시 재등록 후 실행 보정 경로 유지
+- 노드 지원: Start/AI/Teams/Branch/Wait/Terminate/Script/Fork/Join 매핑과 JSON↔폼 편집 동시 유지
 
 ## 핵심 API
 - `POST /api/workflows` / `GET /api/workflows`
