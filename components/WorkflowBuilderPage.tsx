@@ -724,7 +724,6 @@ export default function WorkflowBuilderPage({ workflowId }: { workflowId: number
             <select value={data.terminateType || 'SUCCESS'} onChange={(event) => updateField('terminateType', event.target.value)}>
               <option value="SUCCESS">SUCCESS</option>
               <option value="FAILURE">FAILURE</option>
-              <option value="TERMINATED">TERMINATED</option>
             </select>
           </label>
           <label className="wf-field">

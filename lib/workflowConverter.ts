@@ -33,7 +33,7 @@ function nodeLabel(node: ReactFlowNodeShape): string {
 
 function toConductorInputNode(taskId: string, taskType: 'ai_mock' | 'teams_mock' | 'script_mock' | 'transform_mock' | 'http_mock', data: NodeData) {
   return {
-    name: `${taskId}_${taskType}`,
+    name: taskType,
     taskReferenceName: taskId,
     type: 'SIMPLE',
     ...(typeof data.retryCount === 'number' ? { retryCount: data.retryCount } : {}),
@@ -90,12 +90,21 @@ function toTask(node: ReactFlowNodeShape): ConductorTask {
   }
 
   if (node.data.type === 'terminate') {
+    const terminationStatus =
+      node.data.terminateType === 'FAILURE'
+        ? 'FAILED'
+        : node.data.terminateType === 'TERMINATED'
+          ? 'FAILED'
+          : 'COMPLETED';
     return {
       name: `${id}_terminate`,
       taskReferenceName: id,
       type: 'TERMINATE',
       inputParameters: {
-        terminationType: data.terminateType || 'SUCCESS',
+        terminationStatus,
+        ...(typeof data.terminateType === 'string'
+          ? { terminationType: data.terminateType }
+          : {}),
         terminationMessage: data.terminateMessage || `${nodeLabel(node)} terminated`,
       },
     };
