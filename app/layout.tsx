@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ReactFlowProvider } from '@xyflow/react';
 
 export const metadata: Metadata = {
   title: 'Conductor Workflow Builder',
@@ -13,8 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ReactFlowProvider>
+          <div className="layout-shell">{children}</div>
+        </ReactFlowProvider>
+      </body>
     </html>
   );
 }
-

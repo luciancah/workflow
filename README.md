@@ -388,3 +388,41 @@ flowchart LR
 - 실행 중/완료 후 상태는 `Conductor`를 주원본으로 캐시 갱신
 - 1차 회귀 대응: Conductor 워크플로우 미등록 이슈에 대해 실행 시 재등록 후 재시도 보정
 - 다만 템플릿/확장 아이디어(웹훅 트리거, Retry 정책 UI, HTTP/Transform 강화)는 현재 보조 단계
+
+## 템플릿 라우팅/UI 매핑(현재 반영 상태)
+
+현재 구현은 템플릿 구조를 기반으로 다음 레이어를 맞췄습니다.
+
+- 라우팅
+  - `/` : 시작 화면(워크플로우 생성 진입점)  
+  - `/workflows` : 최신 워크플로우가 있으면 즉시 이동(템플릿의 최신 진입 동작)
+  - `/workflows/[id]` : 템플릿형 에디터 뷰(캔버스/우측 탭)
+  - `/workflows/list` : 기존 목록 기능 분리(`list`로 이동)
+  - `/workflows/new` : 단순 생성 보조 진입(기존 API 경로 유지)
+
+- UI 구성 대응
+  - 상단 툴바: `[components/WorkflowBuilderPage.tsx](/Users/luciancah/Documents/Github/workflow/components/WorkflowBuilderPage.tsx)`의 `wf-toolbar`/`Run`/`Save`
+  - 캔버스: `ReactFlow` + 커스텀 노드 `workflowNode`, 엣지 `wf-edge` + `AnimatedWorkflowEdge`
+  - 우측 패널: `Properties`, `Code`, `Runs` 탭
+  - 노드 렌더: `WorkflowNode` + `wf-node-card`, `wf-node-status`를 이용한 카드형 뷰
+  - 상태 갱신: `setInterval` 기반 폴링 (`GET /api/executions/:id`)
+
+- React Flow JSON ↔ Conductor 변환 연동
+  - UI 저장/실행 전에는 항상 `reactFlowJson`을 `/api/workflows` 또는 `/api/workflows/:id`로 전달
+  - 서버는 이를 [lib/workflowConverter.ts](/Users/luciancah/Documents/Github/workflow/lib/workflowConverter.ts)로 `conductorCompiledJson`으로 변환
+  - 실행은 `conductorName/version` 기준으로 Conductor API 호출 (`app/api/workflows/[id]/execute/route.ts`)
+
+### UI 예시 트레이스 (간단)
+
+시나리오: `Start → AI → Branch(success/fail)` 를 캔버스에 구성하고 `Code` 탭에서 아래 JSON 저장 시:
+
+```text
+Start ──▶ AI ──▶ Branch(label: success) ──▶ Terminate(SUCCESS)
+                   └─▶ Branch(label: fail) ─────▶ Terminate(FAILURE)
+```
+
+실행 후 `Runs` 탭에서:
+- `workflow runs` 목록
+- 선택 run의 Conductor 실행 컨텍스트 JSON
+- task별 로그/출력 타임라인
+을 순차적으로 확인할 수 있습니다.
