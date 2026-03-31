@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createWorkflowRun, getWorkflowById, ensureSchema } from '@/lib/db';
-import { executeConductorWorkflow } from '@/lib/conductor';
+import {
+  executeConductorWorkflow,
+  updateConductorWorkflow,
+} from '@/lib/conductor';
 
 const terminalStatuses = new Set([
   'COMPLETED',
@@ -29,7 +32,34 @@ export async function POST(
   const body = await req.json().catch(() => ({}));
   const input = body?.input ?? {};
 
-  const execution = await executeConductorWorkflow(workflow.conductorName, workflow.version, input);
+  let execution: Record<string, unknown>;
+  try {
+    execution = await executeConductorWorkflow(workflow.conductorName, workflow.version, input);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const notFoundInConductor =
+      message.includes('No such workflow defined') ||
+      message.includes('"status":404');
+    if (!notFoundInConductor) {
+      throw error;
+    }
+
+    const compiled = workflow.conductorCompiledJson as {
+      name?: unknown;
+      description?: unknown;
+      tasks?: unknown;
+      version?: unknown;
+    };
+    await updateConductorWorkflow({
+      name: typeof compiled?.name === 'string' ? compiled.name : workflow.conductorName,
+      description:
+        typeof compiled?.description === 'string' ? compiled.description : workflow.name,
+      version: Number(compiled?.version) || workflow.version,
+      tasks: Array.isArray(compiled?.tasks) ? compiled.tasks : [],
+    });
+    execution = await executeConductorWorkflow(workflow.conductorName, workflow.version, input);
+  }
+
   const conductorId =
     (execution as { workflowId?: string; id?: string }).workflowId ||
     (execution as { workflowId?: string; id?: string }).id ||
@@ -46,4 +76,3 @@ export async function POST(
 
   return NextResponse.json(run);
 }
-

@@ -52,15 +52,16 @@ export async function upsertConductorWorkflow(input: {
   httpMethod?: 'POST' | 'PUT';
 }) {
   const method = input.httpMethod || 'POST';
-  const endpoint = method === 'POST' ? '/metadata/workflow' : '/metadata/workflow';
+  const endpoint = '/metadata/workflow';
+  const workflowPayload = {
+    name: input.name,
+    description: input.description,
+    version: input.version,
+    tasks: input.tasks,
+  };
   return callConductor<Record<string, unknown>>(endpoint, {
     method,
-    body: JSON.stringify({
-      name: input.name,
-      description: input.description,
-      version: input.version,
-      tasks: input.tasks,
-    }),
+    body: JSON.stringify(method === 'PUT' ? [workflowPayload] : workflowPayload),
   });
 }
 
