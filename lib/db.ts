@@ -2,9 +2,7 @@ import { Pool } from 'pg';
 
 const rawConnectionCandidates = [
   process.env.DATABASE_URL,
-  process.env.POSTGRES_URL_NON_POOLING,
-  process.env.POSTGRES_URL,
-  process.env.POSTGRES_PRISMA_URL,
+  process.env.COMPOSE_DATABASE_URL,
 ]
   .filter((candidate): candidate is string => Boolean(candidate));
 
@@ -25,50 +23,8 @@ function buildConnectionCandidates() {
     if (!value) {
       return;
     }
-
-    // If Supabase splits password into separate env var and URL differs, prefer the dedicated password.
-    const postgresPassword = sanitizeConnectionString(process.env.POSTGRES_PASSWORD);
-    if (postgresPassword) {
-      try {
-        const parsed = new URL(value);
-        if (parsed.password && parsed.password !== postgresPassword) {
-          parsed.password = postgresPassword;
-          add(candidates, parsed.toString());
-          return;
-        }
-      } catch {
-        // Ignore invalid/partial URLs.
-      }
-    }
-
     add(candidates, value);
   });
-
-  if (
-    process.env.POSTGRES_HOST &&
-    process.env.POSTGRES_USER &&
-    process.env.POSTGRES_DATABASE &&
-    process.env.POSTGRES_PASSWORD
-  ) {
-    const host = sanitizeConnectionString(process.env.POSTGRES_HOST);
-    const user = sanitizeConnectionString(process.env.POSTGRES_USER);
-    const db = sanitizeConnectionString(process.env.POSTGRES_DATABASE);
-    const password = sanitizeConnectionString(process.env.POSTGRES_PASSWORD);
-    if (host && user && db && password) {
-      try {
-        add(candidates, `postgres://${user}:${password}@${host}:5432/${db}?sslmode=require`);
-        const projectRef = host.match(/db\\.([^.]+)\\.supabase\\.co/)?.[1];
-        if (projectRef) {
-          add(
-            candidates,
-            `postgres://${user}.${projectRef}:${password}@${host}:5432/${db}?sslmode=require`,
-          );
-        }
-      } catch {
-        // No-op if any interpolation fails.
-      }
-    }
-  }
 
   return candidates;
 }
@@ -88,14 +44,20 @@ function sanitizeConnectionString(rawConnectionString: string | undefined | null
 }
 
 function pickConnectionString() {
-  for (const raw of connectionCandidates) {
-    const value = sanitizeConnectionString(raw);
-    if (!value) {
-      continue;
-    }
-    if (value.includes('pooler.supabase.com')) {
-      return { source: 'pooler', value };
-    }
+  const databaseUrl = sanitizeConnectionString(process.env.DATABASE_URL);
+  if (databaseUrl) {
+    return {
+      source: 'DATABASE_URL',
+      value: databaseUrl,
+    };
+  }
+
+  const composeUrl = sanitizeConnectionString(process.env.COMPOSE_DATABASE_URL);
+  if (composeUrl) {
+    return {
+      source: 'COMPOSE_DATABASE_URL',
+      value: composeUrl,
+    };
   }
 
   const first = rawConnectionCandidates.find((candidate) => Boolean(candidate));
@@ -107,16 +69,13 @@ function pickConnectionString() {
     : { source: 'missing', value: null };
 }
 
-function sanitizeDriverConnectionString(raw: string | null, isPooler: boolean) {
+function sanitizeDriverConnectionString(raw: string | null) {
   if (!raw) {
     return null;
   }
 
   try {
     const parsed = new URL(raw);
-    if (isPooler && parsed.searchParams.has('sslmode')) {
-      parsed.searchParams.delete('sslmode');
-    }
     return parsed.toString();
   } catch {
     // If parsing fails, keep the original string as fallback.
@@ -126,16 +85,11 @@ function sanitizeDriverConnectionString(raw: string | null, isPooler: boolean) {
 
 const selectedConnection = pickConnectionString();
 const connectionSource = selectedConnection.source;
-const usesPooler = selectedConnection.value ? selectedConnection.value.includes('pooler.supabase.com') : false;
-const connectionString = sanitizeDriverConnectionString(selectedConnection.value, usesPooler);
+const connectionString = sanitizeDriverConnectionString(selectedConnection.value);
 
 const isSslRequired = (() => {
   if (!selectedConnection.value) {
-    return true;
-  }
-
-  if (usesPooler) {
-    return true;
+    return false;
   }
 
   try {
@@ -147,17 +101,8 @@ const isSslRequired = (() => {
   } catch {
     // Fallback to safe default for postgres URLs.
   }
-  return true;
+  return false;
 })();
-
-if (
-  connectionString &&
-  connectionString.includes('pooler.supabase.com') &&
-  isSslRequired &&
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED == null
-) {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
 
 const pool = connectionString
   ? new Pool({

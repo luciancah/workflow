@@ -50,7 +50,7 @@ services:
     working_dir: /workspace
     command: sh -c "corepack pnpm install --frozen-lockfile=false && corepack pnpm dev"
     environment:
-      # For local docker execution, COMPOSE_DATABASE_URL defaults to local Supabase port.
+      # For local docker execution, COMPOSE_DATABASE_URL defaults to local Postgres port.
       # Set DATABASE_URL in your shell/.env to override.
       DATABASE_URL: ${COMPOSE_DATABASE_URL:-postgres://postgres:postgres@host.docker.internal:54322/postgres}
       CONDUCTOR_BASE_URL: http://conductor:8080/api
