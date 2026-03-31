@@ -107,17 +107,39 @@ function pickConnectionString() {
     : { source: 'missing', value: null };
 }
 
+function sanitizeDriverConnectionString(raw: string | null, isPooler: boolean) {
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(raw);
+    if (isPooler && parsed.searchParams.has('sslmode')) {
+      parsed.searchParams.delete('sslmode');
+    }
+    return parsed.toString();
+  } catch {
+    // If parsing fails, keep the original string as fallback.
+    return raw;
+  }
+}
+
 const selectedConnection = pickConnectionString();
-const connectionString = selectedConnection.value;
 const connectionSource = selectedConnection.source;
+const usesPooler = selectedConnection.value ? selectedConnection.value.includes('pooler.supabase.com') : false;
+const connectionString = sanitizeDriverConnectionString(selectedConnection.value, usesPooler);
 
 const isSslRequired = (() => {
-  try {
-    if (!connectionString) {
-      return true;
-    }
+  if (!selectedConnection.value) {
+    return true;
+  }
 
-    const parsed = new URL(connectionString);
+  if (usesPooler) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(selectedConnection.value);
     const mode = parsed.searchParams.get('sslmode');
     if (mode) {
       return mode !== 'disable' && mode !== 'allow' && mode !== 'prefer' ? true : false;
