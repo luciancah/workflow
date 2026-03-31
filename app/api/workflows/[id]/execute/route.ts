@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createWorkflowRun, getWorkflowById, ensureSchema } from '@/lib/db';
+import { createWorkflowRun, getWorkflowById, hasDatabase, ensureSchema } from '@/lib/db';
 import {
   executeConductorWorkflow,
   updateConductorWorkflow,
@@ -18,6 +18,13 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
+  if (!hasDatabase()) {
+    return NextResponse.json(
+      { error: 'DATABASE_URL is not configured. Set DATABASE_URL to enable workflow execution history.' },
+      { status: 503 },
+    );
+  }
+
   const workflowId = Number(params.id);
   if (!Number.isFinite(workflowId)) {
     return NextResponse.json({ error: 'invalid workflow id' }, { status: 400 });

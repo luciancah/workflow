@@ -1,12 +1,23 @@
 import { Pool } from 'pg';
 
 const connectionString = process.env.DATABASE_URL;
+const pool = connectionString ? new Pool({ connectionString }) : null;
 
-if (!connectionString) {
-  throw new Error('DATABASE_URL is required');
+export function hasDatabase() {
+  return !!pool;
 }
 
-const pool = new Pool({ connectionString });
+function requireDatabase(operation: string) {
+  if (!pool) {
+    const error = new Error('DATABASE_URL is required') as Error & {
+      code?: string;
+      operation?: string;
+    };
+    error.code = 'DB_NOT_CONFIGURED';
+    error.operation = operation;
+    throw error;
+  }
+}
 
 const ensureSchemaQuery = `
   CREATE TABLE IF NOT EXISTS workflows (
@@ -50,6 +61,9 @@ const ensureSchemaQuery = `
 `;
 
 export async function ensureSchema() {
+  if (!pool) {
+    return;
+  }
   await pool.query(ensureSchemaQuery);
 }
 
@@ -57,11 +71,15 @@ export async function executeQuery<T = Record<string, unknown>>(
   text: string,
   params: unknown[] = [],
 ) {
+  requireDatabase('query');
   const result = await pool.query(text, params);
   return result.rows as T[];
 }
 
 export async function listWorkflows() {
+  if (!pool) {
+    return [];
+  }
   const rows = await executeQuery<{
     id: string;
     name: string;
@@ -113,6 +131,9 @@ export async function listWorkflows() {
 }
 
 export async function getWorkflowById(id: number) {
+  if (!pool) {
+    return null;
+  }
   const rows = await executeQuery<{
     id: string;
     name: string;
@@ -145,6 +166,9 @@ export async function getWorkflowById(id: number) {
 }
 
 export async function getWorkflowByConductorName(name: string) {
+  if (!pool) {
+    return null;
+  }
   const rows = await executeQuery<{ id: string }>(
     `SELECT id FROM workflows WHERE conductor_name = $1 LIMIT 1`,
     [name],
@@ -160,6 +184,7 @@ export async function createWorkflow(input: {
   conductorName: string;
   version: number;
 }) {
+  requireDatabase('create');
   const rows = await executeQuery<{
     id: string;
     name: string;
@@ -201,6 +226,7 @@ export async function updateWorkflow(input: {
   conductorName: string;
   version: number;
 }) {
+  requireDatabase('update');
   const rows = await executeQuery<{
     id: string;
     name: string;
@@ -248,6 +274,7 @@ export async function createWorkflowRun(input: {
   status: string;
   input: unknown;
 }) {
+  requireDatabase('run:create');
   const rows = await executeQuery<{
     id: string;
     workflow_id: string;
@@ -285,6 +312,7 @@ export async function updateWorkflowRun(input: {
   endedAt: string | null;
   output: unknown | null;
 }) {
+  requireDatabase('run:update');
   const rows = await executeQuery<{
     id: string;
     workflow_id: string;
@@ -315,6 +343,9 @@ export async function updateWorkflowRun(input: {
 }
 
 export async function getWorkflowRunById(id: number) {
+  if (!pool) {
+    return null;
+  }
   const rows = await executeQuery<{
     id: string;
     workflow_id: string;
@@ -350,6 +381,9 @@ export async function getWorkflowRunById(id: number) {
 }
 
 export async function listRunsForWorkflow(workflowId: number) {
+  if (!pool) {
+    return [];
+  }
   const rows = await executeQuery<{
     id: string;
     workflow_id: string;
@@ -394,6 +428,7 @@ export async function upsertRunStep(input: {
   logs: string | null;
   error: string | null;
 }) {
+  requireDatabase('runstep:upsert');
   const rows = await executeQuery<{
     id: string;
     workflow_run_id: string;
@@ -438,6 +473,9 @@ export async function upsertRunStep(input: {
 }
 
 export async function listRunSteps(workflowRunId: number) {
+  if (!pool) {
+    return [];
+  }
   const rows = await executeQuery<{
     id: string;
     conductor_task_id: string | null;
@@ -475,4 +513,3 @@ export async function listRunSteps(workflowRunId: number) {
     error: row.error,
   }));
 }
-

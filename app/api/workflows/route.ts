@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FlowConversionError, buildConductorPayload } from '@/lib/workflowConverter';
-import { createWorkflow, ensureSchema, listWorkflows } from '@/lib/db';
+import { createWorkflow, ensureSchema, hasDatabase, listWorkflows } from '@/lib/db';
 import { registerConductorWorkflow } from '@/lib/conductor';
 
 export async function GET() {
@@ -10,6 +10,13 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!hasDatabase()) {
+    return NextResponse.json(
+      { error: 'DATABASE_URL is not configured. Set DATABASE_URL to enable workflow persistence.' },
+      { status: 503 },
+    );
+  }
+
   await ensureSchema();
   const body = await req.json();
   const name = typeof body.name === 'string' ? body.name.trim() : '';

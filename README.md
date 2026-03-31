@@ -71,6 +71,10 @@ flowchart LR
 ## 빠른 시작
 1. 환경변수 파일 준비
    - `cp .env.example .env.local`
+   - 로컬에서 `npm run dev`로 직접 실행할 경우 `.env.local`의 값은 호스트 기준으로 바꿔야 합니다.
+     - `DATABASE_URL=postgres://workflow:workflow@localhost:5433/workflow_db`
+     - `CONDUCTOR_BASE_URL=http://localhost:8080/api`
+   - 도커 컴포즈 환경에서는 기존 예시 값(`postgres`, `conductor` 호스트명)을 그대로 사용하세요.
 2. Compose 실행
    - `docker compose up -d --build`
 3. 웹앱 접속

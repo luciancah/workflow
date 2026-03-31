@@ -3,6 +3,7 @@ import { FlowConversionError, buildConductorPayload } from '@/lib/workflowConver
 import {
   ensureSchema,
   getWorkflowById,
+  hasDatabase,
   updateWorkflow,
 } from '@/lib/db';
 import { updateConductorWorkflow } from '@/lib/conductor';
@@ -28,6 +29,13 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
+  if (!hasDatabase()) {
+    return NextResponse.json(
+      { error: 'DATABASE_URL is not configured. Set DATABASE_URL to enable workflow updates.' },
+      { status: 503 },
+    );
+  }
+
   const workflowId = Number(params.id);
   if (!Number.isFinite(workflowId)) {
     return NextResponse.json({ error: 'invalid workflow id' }, { status: 400 });
