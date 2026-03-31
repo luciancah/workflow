@@ -50,13 +50,14 @@ services:
     working_dir: /workspace
     command: sh -c "corepack pnpm install --frozen-lockfile=false && corepack pnpm dev"
     environment:
-      DATABASE_URL: postgres://workflow:workflow@postgres:5432/workflow_db
+      # For local docker execution, COMPOSE_DATABASE_URL defaults to local Supabase port.
+      # Set DATABASE_URL in your shell/.env to override.
+      DATABASE_URL: ${COMPOSE_DATABASE_URL:-postgres://postgres:postgres@host.docker.internal:54322/postgres}
       CONDUCTOR_BASE_URL: http://conductor:8080/api
       NEXT_PUBLIC_APP_URL: http://localhost:3000
     ports:
       - "3000:3000"
     depends_on:
-      - postgres
       - conductor
     volumes:
       - .:/workspace
