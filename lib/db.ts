@@ -25,25 +25,23 @@ function buildConnectionCandidates() {
     if (!value) {
       return;
     }
-    add(candidates, value);
 
     // If Supabase splits password into separate env var and URL differs, prefer the dedicated password.
     const postgresPassword = sanitizeConnectionString(process.env.POSTGRES_PASSWORD);
-    if (!postgresPassword) {
-      return;
-    }
-
-    try {
-      const parsed = new URL(value);
-      if (!parsed.password || parsed.password === postgresPassword) {
-        return;
+    if (postgresPassword) {
+      try {
+        const parsed = new URL(value);
+        if (parsed.password && parsed.password !== postgresPassword) {
+          parsed.password = postgresPassword;
+          add(candidates, parsed.toString());
+          return;
+        }
+      } catch {
+        // Ignore invalid/partial URLs.
       }
-
-      parsed.password = postgresPassword;
-      add(candidates, parsed.toString());
-    } catch {
-      // Ignore invalid/partial URLs.
     }
+
+    add(candidates, value);
   });
 
   if (
