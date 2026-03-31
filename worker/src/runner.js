@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 const BASE_URL = process.env.CONDUCTOR_BASE_URL || 'http://conductor:8080/api';
 const POLL_TYPES = ['ai_mock', 'teams_mock', 'transform_mock', 'http_mock', 'script_mock'];
@@ -109,4 +109,3 @@ async function run() {
 }
 
 run();
-

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ReactFlowProvider } from '@xyflow/react';
+import { PersistentCanvas } from '@/components/workflow/persistent-canvas';
 
 export const metadata: Metadata = {
   title: 'Conductor Workflow Builder',
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ReactFlowProvider>
+          <PersistentCanvas />
           <div className="layout-shell">{children}</div>
         </ReactFlowProvider>
       </body>

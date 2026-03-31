@@ -50,13 +50,14 @@ export default function NewWorkflowPage() {
   };
 
   return (
-    <main className="layout">
-      <div className="card" style={{ maxWidth: 640, margin: '0 auto' }}>
+    <main className="wf-layout">
+      <div className="wf-home-panel" style={{ margin: '0 auto', maxWidth: 640 }}>
         <h1>새 워크플로우 생성</h1>
         <div style={{ display: 'grid', gap: 12 }}>
           <label>
             이름
             <input
+              className="wf-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
               style={{ width: '100%', marginTop: 6 }}
@@ -65,13 +66,14 @@ export default function NewWorkflowPage() {
           <label>
             설명
             <textarea
+              className="wf-input"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
               style={{ width: '100%', marginTop: 6 }}
             />
           </label>
-          <button disabled={saving || !name.trim()} onClick={create}>
+          <button className="wf-btn primary" disabled={saving || !name.trim()} onClick={create}>
             {saving ? '생성 중...' : '워크플로우 생성'}
           </button>
         </div>
@@ -79,4 +81,3 @@ export default function NewWorkflowPage() {
     </main>
   );
 }
-

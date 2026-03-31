@@ -1,49 +1,13 @@
- 'use client';
+'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ReactFlow, Background } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-
-type QuickNode = {
-  id: string;
-  type: 'trigger';
-  position: { x: number; y: number };
-  data: {
-    type: 'add';
-    onCreate?: () => void;
-  };
-  draggable: boolean;
-  selectable: boolean;
-};
-
-const starterFlowNodes: QuickNode[] = [
-  {
-    id: 'start-hint',
-    type: 'trigger',
-    position: { x: -120, y: 0 },
-    data: { type: 'add' },
-    draggable: false,
-    selectable: false,
-  },
-];
 
 export default function HomePage() {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('새 워크플로우');
   const [description, setDescription] = useState('AI/Teams 기반 템플릿');
-
-  const initialNodes = useMemo(
-    () => starterFlowNodes,
-    [],
-  );
-  const [nodes] = useState(initialNodes);
-
-  useEffect(() => {
-    const fallback = localStorage.getItem('wf_name');
-    if (fallback) setName(fallback);
-  }, []);
 
   const handleCreate = async () => {
     if (creating) return;
@@ -97,84 +61,39 @@ export default function HomePage() {
   };
 
   return (
-    <main style={{ position: 'fixed', inset: 0, background: 'transparent' }}>
-      <div className="wf-layout">
-        <div
-          style={{
-            position: 'absolute',
-            inset: 12,
-            border: '1px solid var(--border)',
-            borderRadius: 12,
-            background: 'var(--sidebar)',
-            overflow: 'hidden',
-          }}
-        >
-          <ReactFlow
-            nodes={nodes}
-            edges={[]}
-            nodeTypes={{
-              trigger: () => (
-                <div className="wf-add-node">
-                  <div>
-                    <h1 style={{ margin: 0, fontSize: 28 }}>
-                      AI Workflow Builder
-                    </h1>
-                    <p style={{ color: 'var(--muted-foreground)' }}>
-                      시작 화면입니다. 새 워크플로우 버튼으로 바로 편집기로 이동합니다.
-                    </p>
-                    <button className="wf-btn primary" onClick={handleCreate} disabled={creating}>
-                      {creating ? '생성 중...' : '새 워크플로우 시작'}
-                    </button>
-                  </div>
-                </div>
-              ),
-            }}
-            fitView
-            panOnScroll
-          >
-            <Background />
-          </ReactFlow>
-          <div
-            style={{
-              position: 'absolute',
-              left: 24,
-              top: 24,
-              right: 24,
-              display: 'grid',
-              gap: 8,
-              width: 360,
-              zIndex: 20,
-            }}
-          >
-            <h2 style={{ margin: 0, fontSize: 20 }}>시작하기</h2>
+    <main className="wf-home">
+      <section className="wf-home-panel">
+        <p className="wf-home-kicker">Conductor + Workflow Builder</p>
+        <h1 className="wf-home-title">AI/Teams Workflow Builder</h1>
+        <p className="wf-muted">
+          시작 화면에서 바로 새 워크플로우를 생성하고 편집 화면으로 이동해
+          노드를 구성할 수 있습니다.
+        </p>
+        <div className="wf-grid">
+          <label className="wf-field">
+            <span>이름</span>
             <input
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(event) => setName(event.target.value)}
               maxLength={80}
               placeholder="워크플로우 이름"
-              style={{
-                padding: '8px 10px',
-                borderRadius: 8,
-                background: '#0b1220',
-                border: '1px solid var(--border)',
-              }}
             />
+          </label>
+          <label className="wf-field">
+            <span>설명</span>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(event) => setDescription(event.target.value)}
               rows={3}
               maxLength={240}
               placeholder="설명"
-              style={{
-                padding: '8px 10px',
-                borderRadius: 8,
-                background: '#0b1220',
-                border: '1px solid var(--border)',
-              }}
             />
-          </div>
+          </label>
+          <button className="wf-btn primary" onClick={handleCreate} disabled={creating}>
+            {creating ? '생성 중...' : '새 워크플로우 시작'}
+          </button>
         </div>
-      </div>
+      </section>
     </main>
   );
 }

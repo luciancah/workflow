@@ -18,7 +18,7 @@
   --border: #1f2937;
   --input: #1f2937;
   --ring: #94a3b8;
-  --sidebar: #0b1220;
+  --sidebar: #030712;
   --sidebar-foreground: #e2e8f0;
   --sidebar-border: #1f2937;
 }
@@ -33,11 +33,8 @@ body {
   min-height: 100%;
   color: var(--foreground);
   background: linear-gradient(180deg, #020817 0%, #020617 100%);
-  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-}
-
-.wf-shell {
-  min-height: 100vh;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial,
+    sans-serif;
 }
 
 body {
@@ -50,7 +47,8 @@ a {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
   color: inherit;
 }
@@ -62,44 +60,109 @@ button {
 pre,
 code,
 textarea {
-  font-family: "Menlo", "SFMono-Regular", "Roboto Mono", ui-monospace, monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
 }
 
 .layout-shell {
+  position: relative;
+  min-height: 100vh;
+  z-index: 1;
+}
+
+.workflow-persistent-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 12% 15%, rgb(56 189 248 / 0.15), transparent 30%),
+    radial-gradient(circle at 86% 12%, rgb(192 132 252 / 0.13), transparent 28%),
+    radial-gradient(circle at 40% 70%, rgb(34 197 94 / 0.1), transparent 28%),
+    linear-gradient(180deg, var(--background) 0%, #020617 100%);
+  background-size: cover;
+  pointer-events: none;
+}
+
+.workflow-persistent-canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+      to right,
+      color-mix(in oklab, var(--border) 24%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--border) 24%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 28px 28px;
+  opacity: 0.48;
+}
+
+.wf-muted {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.wf-btn {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0b1220;
+  color: var(--foreground);
+  padding: 8px 12px;
+  transition: border-color 120ms ease-out, transform 120ms ease-out;
+}
+
+.wf-btn:hover {
+  border-color: var(--ring);
+}
+
+.wf-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.wf-btn.primary {
+  background: #1d4ed8;
+  border-color: #3b82f6;
+  color: #f8fafc;
+}
+
+.wf-btn-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wf-shell {
   min-height: 100vh;
   position: relative;
+  z-index: 1;
 }
 
 .wf-toolbar {
   position: sticky;
-  top: 0;
-  z-index: 20;
+  top: 12px;
+  z-index: 15;
   display: flex;
   justify-content: space-between;
-  gap: 12px;
   align-items: center;
-  background: color-mix(in oklab, var(--card) 88%, transparent);
+  gap: 12px;
   border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 86%, transparent);
   border-radius: 12px;
   margin: 12px;
-  padding: 10px 14px;
+  padding: 12px 14px;
   backdrop-filter: blur(6px);
 }
 
 .wf-layout {
   position: relative;
   width: 100%;
-  height: calc(100vh - 72px);
-}
-
-.wf-input {
-  width: 100%;
-  min-height: 32px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #0b1220;
-  color: var(--foreground);
-  padding: 8px 10px;
+  height: calc(100vh - 74px);
+  padding: 12px;
 }
 
 .wf-main {
@@ -107,56 +170,62 @@ textarea {
   grid-template-columns: 1fr minmax(320px, 34%);
   gap: 12px;
   height: 100%;
-  padding: 12px;
-  position: relative;
 }
 
-.wf-main .wf-canvas-wrap {
+.wf-canvas-wrap {
   border: 1px solid var(--border);
   border-radius: 12px;
+  background: color-mix(in oklab, var(--sidebar) 84%, transparent);
   overflow: hidden;
   position: relative;
-  background: color-mix(in oklab, var(--sidebar) 80%, black);
 }
 
 .wf-canvas-shell {
   position: relative;
   width: 100%;
-  height: calc(100vh - 116px);
+  height: 100%;
 }
 
 .wf-meta-edit {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 8;
+  min-width: 320px;
   display: grid;
   gap: 8px;
-  padding: 10px;
+}
+
+.wf-input {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0b1220;
+  color: var(--foreground);
+  padding: 8px 10px;
+}
+
+.wf-input textarea,
+textarea.wf-input {
+  min-height: 44px;
 }
 
 .wf-canvas-toolbar {
   position: absolute;
   left: 12px;
-  top: 84px;
-  z-index: 10;
+  top: 104px;
+  z-index: 8;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .wf-canvas-toolbar .wf-palette-button {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-}
-
-.wf-canvas-wrap .canvas-shell-top {
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  top: 12px;
-  z-index: 5;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 6px;
 }
 
 .wf-palette-button {
@@ -164,14 +233,24 @@ textarea {
   border-radius: 999px;
   background: #111827;
   color: var(--foreground);
-  padding: 5px 12px;
+  padding: 6px 12px;
   font-size: 12px;
+}
+
+.wf-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.wf-canvas .react-flow {
+  width: 100%;
+  height: 100%;
 }
 
 .wf-right {
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgba(12, 17, 27, 0.9);
+  background: color-mix(in oklab, var(--sidebar) 92%, transparent);
   backdrop-filter: blur(6px);
   display: flex;
   flex-direction: column;
@@ -181,7 +260,7 @@ textarea {
 
 .wf-tabs {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   border-bottom: 1px solid var(--border);
   padding: 8px;
   background: var(--card);
@@ -208,20 +287,15 @@ textarea {
   height: 100%;
 }
 
+.wf-grid {
+  display: grid;
+  gap: 8px;
+}
+
 .wf-section-title {
   margin: 0 0 10px;
   font-size: 14px;
   font-weight: 600;
-}
-
-.wf-row {
-  display: grid;
-  gap: 8px;
-}
-
-.wf-grid {
-  display: grid;
-  gap: 8px;
 }
 
 .wf-field {
@@ -229,12 +303,8 @@ textarea {
   gap: 4px;
 }
 
+.wf-field > span,
 .wf-field label {
-  font-size: 12px;
-  color: var(--muted-foreground);
-}
-
-.wf-field > span {
   font-size: 12px;
   color: var(--muted-foreground);
 }
@@ -259,179 +329,274 @@ textarea {
   line-height: 1.35;
 }
 
-.wf-btn {
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: #1f2937;
-  color: #f8fafc;
-  padding: 7px 10px;
-  font-size: 12px;
-}
-
-.wf-btn.primary {
-  border-color: color-mix(in oklab, var(--foreground) 28%, var(--border));
-  background: #334155;
-}
-
-.wf-btn[disabled] {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.wf-muted {
-  color: var(--muted-foreground);
-  font-size: 12px;
-}
-
 .wf-run-item {
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px;
+  border-radius: 10px;
   background: #0b1220;
-  margin-bottom: 8px;
+  text-align: left;
+  padding: 10px;
 }
 
 .wf-run-item.active {
-  background: #111827;
-  border-color: #64748b;
+  border-color: #3b82f6;
 }
 
-.wf-canvas {
+.wf-run-item .wf-muted {
+  margin-top: 2px;
+}
+
+.wf-run-item + .wf-run-item {
+  margin-top: 6px;
+}
+
+.wf-context-menu {
+  position: fixed;
+  z-index: 30;
+  min-width: 170px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  background: color-mix(in oklab, var(--card) 90%, transparent);
+  box-shadow: 0 16px 30px rgb(0 0 0 / 45%);
+}
+
+.wf-context-menu button {
   width: 100%;
-  height: 100%;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--foreground);
+  text-align: left;
+  padding: 8px;
+  font-size: 12px;
 }
 
-.wf-add-node {
-  width: 320px;
-  height: 320px;
-  border: 1px dashed #334155;
-  background: color-mix(in oklab, var(--card) 85%, transparent);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 18px;
+.wf-context-menu button:hover {
+  background: #1f2937;
+}
+
+.wf-node-start,
+.wf-node-ai,
+.wf-node-teams,
+.wf-node-branch,
+.wf-node-wait,
+.wf-node-terminate,
+.wf-node-script,
+.wf-node-fork,
+.wf-node-join {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #0f172a;
 }
 
 .wf-node-card {
-  width: 12rem;
-  min-height: 12rem;
-  border-radius: 10px;
+  position: relative;
+  width: 192px;
+  min-height: 56px;
   border: 1px solid var(--border);
-  background: var(--card);
-  padding: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  border-left: 4px solid var(--wf-node-tone, var(--border));
+  border-radius: 12px;
+  padding: 12px 10px 10px;
+  background: color-mix(in oklab, var(--card) 92%, transparent);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 22%);
+  transition: border-color 140ms ease-out, box-shadow 140ms ease-out,
+    transform 140ms ease-out;
+}
+
+.wf-node-card:hover {
+  transform: translateY(-1px);
+}
+
+.wf-node-card--selected {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 1px var(--ring), 0 12px 24px rgb(0 0 0 / 28%);
+}
+
+.wf-node-card--start {
+  border-left-color: #0ea5e9;
+}
+
+.wf-node-card--ai {
+  border-left-color: #38bdf8;
+}
+
+.wf-node-card--teams {
+  border-left-color: #c084fc;
+}
+
+.wf-node-card--branch {
+  border-left-color: #fbbf24;
+}
+
+.wf-node-card--wait {
+  border-left-color: #2dd4bf;
+}
+
+.wf-node-card--terminate {
+  border-left-color: #fb7185;
+}
+
+.wf-node-card--script {
+  border-left-color: #4ade80;
+}
+
+.wf-node-card--fork {
+  border-left-color: #f472b6;
+}
+
+.wf-node-card--join {
+  border-left-color: #d8b4fe;
+}
+
+.wf-node-card__badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: color-mix(in oklab, var(--foreground) 88%, transparent);
+  border: 1px solid var(--border);
 }
 
 .wf-node-card__head {
-  border-bottom: 1px solid var(--border);
-  padding: 10px;
-  background: var(--secondary);
+  font-size: 11px;
+  color: var(--muted-foreground);
+  margin-bottom: 3px;
 }
 
-.wf-node-card__body {
-  padding: 10px;
-}
-
-.wf-node-card__title {
+.wf-node-card__label {
+  color: var(--foreground);
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 6px;
 }
 
 .wf-node-card__desc {
   font-size: 11px;
   color: var(--muted-foreground);
-  line-height: 1.35;
 }
 
-.wf-node-status {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  border-radius: 999px;
-  width: 18px;
-  height: 18px;
-  border: 1px solid var(--border);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-}
-
-.wf-node-running {
-  box-shadow: 0 0 0 1px #38bdf8, 0 0 18px #0ea5e9aa;
-}
-
-.wf-node-success {
-  box-shadow: 0 0 0 2px #22c55e;
-}
-
-.wf-node-error {
-  box-shadow: 0 0 0 2px #ef4444;
-}
-
-.wf-context-menu {
-  position: fixed;
-  z-index: 80;
-  min-width: 9rem;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 4px;
-}
-
-.wf-context-menu button {
-  width: 100%;
-  text-align: left;
-  border: 0;
-  background: transparent;
+.wf-node-card__summary {
+  margin-top: 8px;
+  font-size: 11px;
   color: var(--foreground);
-  border-radius: 6px;
-  font-size: 13px;
-  padding: 8px 10px;
+  opacity: 0.82;
 }
 
-.wf-context-menu button:hover {
-  background: var(--accent);
+.wf-edge-path {
+  stroke: var(--border);
+  fill: none;
 }
 
-.wf-node-selected {
-  border-width: 2px;
-  border-color: var(--ring);
+.wf-edge-path--animated {
+  stroke-width: 2px;
+  animation: dashdraw 0.5s linear infinite;
+  stroke-dasharray: 5;
 }
 
-/* React Flow integration */
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 10;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 .react-flow__attribution {
-  display: none;
+  background: transparent !important;
 }
 
 .react-flow__pane {
-  cursor: grab;
+  cursor: grab !important;
 }
 
 .react-flow__pane:active {
-  cursor: grabbing;
+  cursor: grabbing !important;
 }
 
 .react-flow__node {
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
 .react-flow__node.dragging {
-  cursor: grabbing;
-}
-
-.react-flow__edge {
-  cursor: pointer;
+  cursor: grabbing !important;
 }
 
 .react-flow__handle {
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--border);
-  background: var(--primary);
+  width: 12px !important;
+  height: 12px !important;
+  border: 2px solid var(--border) !important;
+  background: var(--primary) !important;
+  z-index: 20 !important;
+}
+
+.react-flow__handle::after {
+  content: "";
+  position: absolute !important;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+}
+
+@media (max-width: 1024px) {
+  .wf-main {
+    grid-template-columns: 1fr;
+  }
+
+  .wf-right {
+    max-height: 52vh;
+  }
+}
+
+.wf-home {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.wf-home-panel {
+  width: min(640px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in oklab, var(--card) 92%, transparent);
+  padding: 24px;
+  box-shadow: 0 18px 60px rgb(0 0 0 / 45%);
+  backdrop-filter: blur(8px);
+}
+
+.wf-home-kicker {
+  margin: 0 0 8px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.wf-home-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+.wf-home .wf-grid {
+  margin-top: 16px;
+}
+
+.wf-list-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.wf-list-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--card) 92%, transparent);
+  padding: 12px;
 }

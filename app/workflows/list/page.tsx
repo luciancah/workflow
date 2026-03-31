@@ -35,13 +35,13 @@ export default function WorkflowsListPage() {
         </div>
       </div>
 
-      <section className="wf-panel-body wf-layout" style={{ padding: 12 }}>
-        <div className="wf-grid">
+      <section className="wf-layout">
+        <div className="wf-list-grid">
           {workflows.length === 0 ? (
             <p className="wf-muted">저장된 워크플로우가 없습니다.</p>
           ) : (
             workflows.map((workflow) => (
-              <div key={workflow.id} className="wf-run-item">
+              <div key={workflow.id} className="wf-list-item">
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                   <strong>
                     <Link href={`/workflows/${workflow.id}`}>{workflow.name}</Link>

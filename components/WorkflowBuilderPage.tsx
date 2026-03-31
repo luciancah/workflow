@@ -6,27 +6,22 @@ import {
   ReactFlow,
   addEdge,
   Background,
-  BaseEdge,
-  Controls,
-  MiniMap,
   type Connection,
   type Edge,
-  type EdgeProps,
-  EdgeText,
   type EdgeTypes,
   type Node,
-  type NodeProps,
   type OnConnect,
-  Handle,
-  Position,
   type NodeTypes,
-  getBezierPath,
+  Controls,
+  MiniMap,
   useEdgesState,
   useNodesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { WorkflowRecord } from '@/lib/types';
 import type { NodeData } from '@/lib/types';
+import { WorkflowEdge } from '@/components/workflow/edge';
+import { WorkflowNode } from '@/components/workflow/node';
 
 type RunStatus =
   | 'RUNNING'
@@ -170,80 +165,8 @@ const paletteColor = (
 type WorkflowNodeType = 'workflowNode';
 type WorkflowNodeShape = Node<NodeData, WorkflowNodeType>;
 
-function WorkflowNode({ data, selected }: NodeProps<WorkflowNodeShape>) {
-  const { accent } = paletteColor(data.type);
-  return (
-    <div className={`wf-node-card${selected ? ' wf-node-selected' : ''}`} style={{ borderLeftColor: accent }}>
-      <Handle id="left" type="target" position={Position.Left} />
-      <Handle id="right" type="source" position={Position.Right} />
-      <div className="wf-node-card__head">
-        <div className="wf-node-card__title">
-          {paletteItems.find((item) => item.type === data.type)?.label || 'Node'}
-        </div>
-        <div style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>{data.label || 'unnamed'}</div>
-      </div>
-      <div className="wf-node-card__body">
-        <div className="wf-node-card__desc">{data.type === 'ai' ? (data.prompt || '-') : data.type === 'teams' ? (data.message || '-') : data.type === 'wait' ? `${data.waitMs || 1000}ms` : data.type === 'branch' ? `switch: ${data.switchParam || 'branchValue'}` : data.type === 'terminate' ? `${data.terminateType || 'SUCCESS'}` : data.type === 'script' ? 'script task' : '-'}</div>
-      </div>
-      <span className={`wf-node-status`} style={{ background: data.type === 'start' ? 'transparent' : 'var(--card)' }}>
-        {data.type === 'start' ? 'S' : data.type.toUpperCase().slice(0, 2)}
-      </span>
-    </div>
-  );
-}
-
 function workflowNodeLabelClassName(type: NodeData['type']) {
   return `wf-node-${type}`;
-}
-
-function AnimatedWorkflowEdge({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
-  style = {},
-  markerEnd,
-  label,
-  selected,
-}: EdgeProps) {
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-    sourcePosition,
-    targetPosition,
-  });
-
-  return (
-    <>
-      <BaseEdge
-        id={id}
-        path={edgePath}
-        markerEnd={markerEnd}
-        style={{
-          ...style,
-          stroke: selected ? 'var(--primary)' : 'var(--muted-foreground)',
-          strokeWidth: 1.8,
-          strokeDasharray: '5 6',
-        }}
-      />
-      {label ? (
-        <EdgeText
-          x={labelX}
-          y={labelY - 8}
-          label={label}
-          labelStyle={{ fill: 'var(--foreground)', fontSize: 11 }}
-          labelBgStyle={{ fill: 'var(--popover)', fillOpacity: 0.8 }}
-          labelBgPadding={[4, 6]}
-          labelBgBorderRadius={4}
-        />
-      ) : null}
-    </>
-  );
 }
 
 function formatDate(value: string | undefined | null) {
@@ -373,7 +296,8 @@ export default function WorkflowBuilderPage({ workflowId }: { workflowId: number
   };
 
   const edgeTypes: EdgeTypes = {
-    'wf-edge': AnimatedWorkflowEdge,
+    'wf-edge': WorkflowEdge.Animated,
+    'wf-temporary-edge': WorkflowEdge.Temporary,
   };
 
   const syncCodeFromCanvas = (nextNodes: WorkflowNodeShape[], nextEdges: Edge[]) => {
