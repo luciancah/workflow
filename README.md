@@ -194,6 +194,152 @@ flowchart LR
 
 현재 버전은 생성/수정 시 `conductor_compiled_json` 전체를 저장하고 DB row의 `version`을 함께 올리며, Conductor 메타에도 동일 version으로 반영합니다.
 
+### 6) 변환 예시
+
+#### 예시 1: 선형 흐름 (Start → AI → Teams)
+
+입력 React Flow:
+
+```json
+{
+  "nodes": [
+    {
+      "id": "start-a",
+      "type": "workflowNode",
+      "position": { "x": 0, "y": 0 },
+      "data": { "type": "start", "label": "Start" }
+    },
+    {
+      "id": "ai-a",
+      "type": "workflowNode",
+      "position": { "x": 160, "y": 0 },
+      "data": { "type": "ai", "label": "AI", "prompt": "요약해줘", "retryCount": 2 }
+    },
+    {
+      "id": "teams-a",
+      "type": "workflowNode",
+      "position": { "x": 320, "y": 0 },
+      "data": { "type": "teams", "label": "Teams", "message": "안내 시작", "channel": "ops" }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "start-a", "target": "ai-a" },
+    { "id": "e2", "source": "ai-a", "target": "teams-a" }
+  ]
+}
+```
+
+출력 Conductor 작업:
+
+```json
+{
+  "name": "wf_170...",
+  "description": "예시 워크플로우",
+  "version": 1,
+  "tasks": [
+    {
+      "name": "ai-a_ai_mock",
+      "taskReferenceName": "ai-a",
+      "type": "SIMPLE",
+      "retryCount": 2,
+      "inputParameters": {
+        "mockType": "ai_mock",
+        "sourceNode": "AI",
+        "prompt": "요약해줘"
+      }
+    },
+    {
+      "name": "teams-a_teams_mock",
+      "taskReferenceName": "teams-a",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "mockType": "teams_mock",
+        "sourceNode": "Teams",
+        "message": "안내 시작",
+        "channel": "ops"
+      }
+    }
+  ]
+}
+```
+
+주의: 현재 버전은 `toConductorInputNode`에서 `name`을 `${id}_${mockType}`으로 구성합니다.
+
+#### 예시 2: Branch + Label 분기
+
+입력 React Flow (브랜치 라벨 필수):
+
+```json
+{
+  "nodes": [
+    { "id": "start-b", "type": "workflowNode", "position": { "x": 0, "y": 0 }, "data": { "type": "start", "label": "Start" } },
+    { "id": "branch-b", "type": "workflowNode", "position": { "x": 160, "y": 0 }, "data": { "type": "branch", "label": "Check", "switchParam": "branchValue" } },
+    { "id": "term-success", "type": "workflowNode", "position": { "x": 320, "y": -60 }, "data": { "type": "terminate", "label": "Success", "terminateType": "SUCCESS", "terminateMessage": "OK" } },
+    { "id": "term-fail", "type": "workflowNode", "position": { "x": 320, "y": 80 }, "data": { "type": "terminate", "label": "Fail", "terminateType": "FAILURE", "terminateMessage": "NOK" } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "start-b", "target": "branch-b" },
+    { "id": "e2", "source": "branch-b", "target": "term-success", "label": "success" },
+    { "id": "e3", "source": "branch-b", "target": "term-fail", "label": "fail" }
+  ]
+}
+```
+
+출력 Conductor 작업(요약):
+
+```json
+{
+  "name": "wf_170...",
+  "description": "...",
+  "version": 1,
+  "tasks": [
+    {
+      "name": "branch-b_switch",
+      "taskReferenceName": "branch-b",
+      "type": "SWITCH",
+      "evaluatorType": "value-param",
+      "caseExpression": "${workflow.input.branchValue}",
+      "decisionCases": {
+        "success": [
+          {
+            "name": "term-success_terminate",
+            "taskReferenceName": "term-success",
+            "type": "TERMINATE",
+            "inputParameters": {
+              "terminationType": "SUCCESS",
+              "terminationMessage": "OK"
+            }
+          }
+        ],
+        "fail": [
+          {
+            "name": "term-fail_terminate",
+            "taskReferenceName": "term-fail",
+            "type": "TERMINATE",
+            "inputParameters": {
+              "terminationType": "FAILURE",
+              "terminationMessage": "NOK"
+            }
+          }
+        ]
+      },
+      "defaultCase": []
+    }
+  ]
+}
+```
+
+#### 예시 3: 실패 케이스 예시 (검증 에러)
+
+1) Start가 2개:
+- 에러 메시지: `Workflow must include exactly one start node.`
+  
+2) Branch 간선 라벨 없음:
+- 에러 메시지: `Branch node branch-b requires label on every outgoing edge.`
+
+3) 루프:
+- A→B→C→A 형태 간선이면 에러 메시지: `Loop detected in workflow graph.`
+
 ## Conductor 동기화 규칙 (현재 구현)
 - 생성: `POST /api/metadata/workflow` (단일 객체)
 - 수정: `PUT /api/metadata/workflow` (배열 형태 `[{...}]`)
