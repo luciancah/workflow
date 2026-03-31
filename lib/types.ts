@@ -9,7 +9,7 @@ export type NodeType =
   | 'fork'
   | 'join';
 
-export interface NodeData {
+export interface NodeData extends Record<string, unknown> {
   type: NodeType;
   label?: string;
   prompt?: string;
@@ -17,6 +17,8 @@ export interface NodeData {
   channel?: string;
   switchParam?: string;
   waitMs?: number;
+  retryCount?: number;
+  retryDelaySeconds?: number;
   terminateType?: 'SUCCESS' | 'FAILURE' | 'TERMINATED';
   terminateMessage?: string;
   script?: string;
@@ -45,6 +47,10 @@ export interface ConductorTask {
   name: string;
   taskReferenceName: string;
   type: 'SIMPLE' | 'SWITCH' | 'WAIT' | 'TERMINATE' | 'INLINE' | 'FORK' | 'JOIN';
+  retryCount?: number;
+  retryDelaySeconds?: number;
+  responseTimeoutSeconds?: number;
+  timeoutPolicy?: 'TIME_OUT_WF' | 'ALERT_ONLY';
   inputParameters?: Record<string, unknown>;
   caseExpression?: string;
   decisionCases?: Record<string, ConductorTask[]>;

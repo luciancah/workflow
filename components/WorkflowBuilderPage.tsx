@@ -18,6 +18,7 @@ import {
   type NodeProps,
   Handle,
   Position,
+  type NodeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { WorkflowRecord } from '@/lib/types';
@@ -70,9 +71,9 @@ const defaultNodeMeta = (type: NodeData['type']): NodeData => {
     case 'start':
       return { type: 'start', label: 'Start' };
     case 'ai':
-      return { type: 'ai', label: 'AI', prompt: '프롬프트를 입력하세요', channel: 'default' };
+      return { type: 'ai', label: 'AI', prompt: '프롬프트를 입력하세요', channel: 'default', retryCount: 3, retryDelaySeconds: 60 };
     case 'teams':
-      return { type: 'teams', label: 'Teams', message: '메시지 템플릿' };
+      return { type: 'teams', label: 'Teams', message: '메시지 템플릿', retryCount: 3, retryDelaySeconds: 60 };
     case 'branch':
       return { type: 'branch', label: 'Branch', switchParam: 'branchValue' };
     case 'wait':
@@ -102,7 +103,10 @@ const paletteColor: Record<NodeData['type'], string> = {
   join: '#d946ef',
 };
 
-function WorkflowNode({ data }: NodeProps<NodeData>) {
+type WorkflowNodeType = 'workflowNode';
+type WorkflowNodeShape = Node<NodeData, WorkflowNodeType>;
+
+function WorkflowNode({ data }: NodeProps<WorkflowNodeShape>) {
   return (
     <div style={{ padding: 8, minWidth: 150, background: '#0f172a', border: '1px solid #334155', borderRadius: 10 }}>
       <Handle type="target" position={Position.Left} />
@@ -115,7 +119,7 @@ function WorkflowNode({ data }: NodeProps<NodeData>) {
   );
 }
 
-const nodeTypes = { workflowNode: WorkflowNode };
+const nodeTypes: NodeTypes = { workflowNode: WorkflowNode };
 
 function isTerminalStatus(status: string) {
   return terminal.has(status);
@@ -126,8 +130,8 @@ export default function WorkflowBuilderPage({ workflowId }: { workflowId: number
   const [workflow, setWorkflow] = useState<WorkflowRecord | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [nodes, setNodes, onNodesChange] = useNodesState<NodeData>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeShape>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [nodeTab, setNodeTab] = useState<'json' | 'form' | null>(null);
   const [jsonNodeText, setJsonNodeText] = useState('');
@@ -166,7 +170,7 @@ export default function WorkflowBuilderPage({ workflowId }: { workflowId: number
     setWorkflow(record);
     setName(record.name);
     setDescription(record.description);
-    setNodes(record.reactFlowJson.nodes as Node<NodeData>[]);
+    setNodes(record.reactFlowJson.nodes as WorkflowNodeShape[]);
     setEdges(record.reactFlowJson.edges as Edge[]);
     setLoading(false);
   };
@@ -215,13 +219,13 @@ export default function WorkflowBuilderPage({ workflowId }: { workflowId: number
         : undefined;
     const next = {
       ...connection,
-      label: label || connection.label,
+      label: label || undefined,
     } as Edge;
     setEdges((eds) => addEdge(next, eds));
   };
 
   const addNode = (type: NodeData['type']) => {
-    const newNode: Node<NodeData> = {
+    const newNode: WorkflowNodeShape = {
       id: `${type}-${Date.now()}`,
       type: 'workflowNode',
       position: { x: 120 + Math.random() * 420, y: 100 + nodes.length * 60 },
@@ -362,6 +366,24 @@ export default function WorkflowBuilderPage({ workflowId }: { workflowId: number
             채널
             <input value={data.channel || ''} onChange={(e) => setField('channel', e.target.value)} />
           </label>
+          <label>
+            재시도 횟수
+            <input
+              type="number"
+              min={0}
+              value={data.retryCount ?? 3}
+              onChange={(e) => setField('retryCount', Number(e.target.value))}
+            />
+          </label>
+          <label>
+            재시도 간격(초)
+            <input
+              type="number"
+              min={0}
+              value={data.retryDelaySeconds ?? 60}
+              onChange={(e) => setField('retryDelaySeconds', Number(e.target.value))}
+            />
+          </label>
         </div>
       );
     }
@@ -380,6 +402,24 @@ export default function WorkflowBuilderPage({ workflowId }: { workflowId: number
           <label>
             채널
             <input value={data.channel || ''} onChange={(e) => setField('channel', e.target.value)} />
+          </label>
+          <label>
+            재시도 횟수
+            <input
+              type="number"
+              min={0}
+              value={data.retryCount ?? 3}
+              onChange={(e) => setField('retryCount', Number(e.target.value))}
+            />
+          </label>
+          <label>
+            재시도 간격(초)
+            <input
+              type="number"
+              min={0}
+              value={data.retryDelaySeconds ?? 60}
+              onChange={(e) => setField('retryDelaySeconds', Number(e.target.value))}
+            />
           </label>
         </div>
       );
@@ -522,13 +562,13 @@ export default function WorkflowBuilderPage({ workflowId }: { workflowId: number
                 </div>
               </div>
               <div style={{ flex: 1 }}>
-                <ReactFlow
+                <ReactFlow<WorkflowNodeShape, Edge>
                   nodeTypes={nodeTypes}
-                  nodes={nodes as unknown as Node[]}
+                  nodes={nodes}
                   edges={edges}
-                  onNodesChange={onNodesChange as OnNodesChange}
-                  onEdgesChange={onEdgesChange as OnEdgesChange}
-                  onConnect={onConnect as OnConnect}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onConnect={onConnect}
                   onNodeClick={(_, node) => setSelectedNodeId(node.id)}
                   onEdgesDelete={() => setSelectedNodeId(null)}
                   fitView

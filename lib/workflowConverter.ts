@@ -33,9 +33,11 @@ function nodeLabel(node: ReactFlowNodeShape): string {
 
 function toConductorInputNode(taskId: string, taskType: 'ai_mock' | 'teams_mock' | 'script_mock' | 'transform_mock' | 'http_mock', data: NodeData) {
   return {
-    name: `${taskId}_task`,
+    name: `${taskId}_${taskType}`,
     taskReferenceName: taskId,
     type: 'SIMPLE',
+    ...(typeof data.retryCount === 'number' ? { retryCount: data.retryCount } : {}),
+    ...(typeof data.retryDelaySeconds === 'number' ? { retryDelaySeconds: data.retryDelaySeconds } : {}),
     inputParameters: {
       mockType: taskType,
       sourceNode: nodeLabel({
@@ -191,9 +193,7 @@ function flattenLinear(
           defaultCase: [],
         });
       } else {
-        if (node.data.type !== 'start') {
-          tasks.push(toTask(node));
-        }
+        tasks.push(toTask(node));
 
         if (outgoing.length > 1) {
           throw new FlowConversionError(`Node ${current} (${node.data.type}) has more than one outgoing edge. Use branch node for divergence.`);

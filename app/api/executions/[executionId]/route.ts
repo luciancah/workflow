@@ -6,7 +6,11 @@ import {
   updateWorkflowRun,
   upsertRunStep,
 } from '@/lib/db';
-import { getConductorWorkflowExecution, getConductorWorkflowTasks } from '@/lib/conductor';
+import {
+  ConductorTaskItem,
+  getConductorWorkflowExecution,
+  getConductorWorkflowTasks,
+} from '@/lib/conductor';
 
 const terminalStatuses = new Set([
   'COMPLETED',
@@ -63,14 +67,20 @@ export async function GET(
 
   let steps = await listRunSteps(run.id);
   try {
-    const tasks = await getConductorWorkflowTasks(run.conductorWorkflowId);
+    const tasksResponse = await getConductorWorkflowTasks(run.conductorWorkflowId);
+    const tasks = Array.isArray(tasksResponse)
+      ? tasksResponse
+      : tasksResponse && Array.isArray((tasksResponse as { results?: unknown }).results)
+        ? ((tasksResponse as { results: ConductorTaskItem[] }).results)
+        : [];
+
     for (const task of tasks) {
       await upsertRunStep({
         workflowRunId: run.id,
         conductorTaskId: task.taskId,
         taskRefName: task.referenceTaskName || null,
         status: task.status,
-        taskType: task.taskType,
+        taskType: task.taskType || null,
         startedAt: pickIso(task.startedTime ? Number(task.startedTime) : null),
         endedAt: pickIso(task.updateTime ? Number(task.updateTime) : null),
         input: task.inputData || null,
@@ -92,4 +102,3 @@ export async function GET(
     isTerminal: terminalStatuses.has(run.status),
   });
 }
-
