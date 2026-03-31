@@ -1,7 +1,102 @@
 import { Pool } from 'pg';
 
-const connectionString = process.env.DATABASE_URL;
-const pool = connectionString ? new Pool({ connectionString }) : null;
+const rawConnectionCandidates = [
+  process.env.DATABASE_URL,
+  process.env.POSTGRES_URL_NON_POOLING,
+  process.env.POSTGRES_URL,
+  process.env.POSTGRES_PRISMA_URL,
+]
+  .filter((candidate): candidate is string => Boolean(candidate));
+
+function sanitizeConnectionString(rawConnectionString: string | undefined | null) {
+  if (!rawConnectionString) {
+    return null;
+  }
+
+  return rawConnectionString
+    .trim()
+    .replace(/^"|"$/g, '')
+    .replace(/^'|'$/g, '')
+    .replace(/\r?\n+/g, '');
+}
+
+function pickConnectionString() {
+  for (const raw of rawConnectionCandidates) {
+    const value = sanitizeConnectionString(raw);
+    if (!value) {
+      continue;
+    }
+    if (value.includes('pooler.supabase.com')) {
+      return { source: 'pooler', value };
+    }
+  }
+
+  const first = rawConnectionCandidates.find((candidate) => Boolean(candidate));
+  return first
+    ? {
+        source: 'fallback',
+        value: sanitizeConnectionString(first),
+      }
+    : { source: 'missing', value: null };
+}
+
+const selectedConnection = pickConnectionString();
+const connectionString = selectedConnection.value;
+const connectionSource = selectedConnection.source;
+
+const isSslRequired = (() => {
+  try {
+    if (!connectionString) {
+      return true;
+    }
+
+    const parsed = new URL(connectionString);
+    const mode = parsed.searchParams.get('sslmode');
+    if (mode) {
+      return mode !== 'disable' && mode !== 'allow' && mode !== 'prefer' ? true : false;
+    }
+  } catch {
+    // Fallback to safe default for postgres URLs.
+  }
+  return true;
+})();
+
+if (
+  connectionString &&
+  connectionString.includes('pooler.supabase.com') &&
+  isSslRequired &&
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED == null
+) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
+const pool = connectionString
+  ? new Pool({
+      connectionString,
+      ssl: isSslRequired ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 5000,
+      max: 10,
+      idleTimeoutMillis: 30000,
+    })
+  : null;
+
+export function getDatabaseSource() {
+  return connectionSource;
+}
+
+export function getDatabaseConnectionString() {
+  return connectionString;
+}
+
+console.log('[db] connection source:', connectionSource);
+if (connectionString) {
+  try {
+    const parsed = new URL(connectionString);
+    console.log('[db] postgres host:', parsed.hostname);
+  } catch {
+    console.log('[db] unable to parse connection string');
+  }
+}
 
 export function hasDatabase() {
   return !!pool;
