@@ -18,6 +18,7 @@ const CONDUCTOR_BASE_URL = process.env.CONDUCTOR_BASE_URL || 'http://localhost:8
 
 async function callConductor<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${CONDUCTOR_BASE_URL}${path}`, {
+    cache: 'no-store',
     headers: {
       'content-type': 'application/json',
       ...(init.headers || {}),
@@ -35,7 +36,12 @@ async function callConductor<T>(path: string, init: RequestInit = {}): Promise<T
     return {} as T;
   }
 
-  return JSON.parse(text) as T;
+  const trimmed = text.trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    return JSON.parse(trimmed) as T;
+  }
+
+  return trimmed as unknown as T;
 }
 
 export async function upsertConductorWorkflow(input: {
@@ -95,8 +101,7 @@ export async function getConductorWorkflowExecution(executionId: string) {
 }
 
 export async function getConductorWorkflowTasks(executionId: string) {
-  return callConductor<ConductorTaskItem[]>(`/workflow/${executionId}/tasks`, {
+  return callConductor<ConductorTaskItem[] | { results?: ConductorTaskItem[] }>(`/workflow/${executionId}/tasks`, {
     method: 'GET',
   });
 }
-
