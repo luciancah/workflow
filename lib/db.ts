@@ -8,6 +8,75 @@ const rawConnectionCandidates = [
 ]
   .filter((candidate): candidate is string => Boolean(candidate));
 
+function buildConnectionCandidates() {
+  const add = (list: string[], value: string) => {
+    const trimmed = sanitizeConnectionString(value);
+    if (!trimmed) {
+      return;
+    }
+    if (!list.includes(trimmed)) {
+      list.push(trimmed);
+    }
+  };
+
+  const candidates: string[] = [];
+  rawConnectionCandidates.forEach((raw) => {
+    const value = sanitizeConnectionString(raw);
+    if (!value) {
+      return;
+    }
+    add(candidates, value);
+
+    // If Supabase splits password into separate env var and URL differs, prefer the dedicated password.
+    const postgresPassword = sanitizeConnectionString(process.env.POSTGRES_PASSWORD);
+    if (!postgresPassword) {
+      return;
+    }
+
+    try {
+      const parsed = new URL(value);
+      if (!parsed.password || parsed.password === postgresPassword) {
+        return;
+      }
+
+      parsed.password = postgresPassword;
+      add(candidates, parsed.toString());
+    } catch {
+      // Ignore invalid/partial URLs.
+    }
+  });
+
+  if (
+    process.env.POSTGRES_HOST &&
+    process.env.POSTGRES_USER &&
+    process.env.POSTGRES_DATABASE &&
+    process.env.POSTGRES_PASSWORD
+  ) {
+    const host = sanitizeConnectionString(process.env.POSTGRES_HOST);
+    const user = sanitizeConnectionString(process.env.POSTGRES_USER);
+    const db = sanitizeConnectionString(process.env.POSTGRES_DATABASE);
+    const password = sanitizeConnectionString(process.env.POSTGRES_PASSWORD);
+    if (host && user && db && password) {
+      try {
+        add(candidates, `postgres://${user}:${password}@${host}:5432/${db}?sslmode=require`);
+        const projectRef = host.match(/db\\.([^.]+)\\.supabase\\.co/)?.[1];
+        if (projectRef) {
+          add(
+            candidates,
+            `postgres://${user}.${projectRef}:${password}@${host}:5432/${db}?sslmode=require`,
+          );
+        }
+      } catch {
+        // No-op if any interpolation fails.
+      }
+    }
+  }
+
+  return candidates;
+}
+
+const connectionCandidates = buildConnectionCandidates();
+
 function sanitizeConnectionString(rawConnectionString: string | undefined | null) {
   if (!rawConnectionString) {
     return null;
@@ -21,7 +90,7 @@ function sanitizeConnectionString(rawConnectionString: string | undefined | null
 }
 
 function pickConnectionString() {
-  for (const raw of rawConnectionCandidates) {
+  for (const raw of connectionCandidates) {
     const value = sanitizeConnectionString(raw);
     if (!value) {
       continue;
