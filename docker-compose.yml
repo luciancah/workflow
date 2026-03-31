@@ -48,7 +48,7 @@ services:
     image: node:22-alpine
     container_name: workflow-app
     working_dir: /workspace
-    command: sh -c "corepack pnpm install --frozen-lockfile=false && corepack pnpm dev"
+    command: sh -c "rm -rf .next && corepack pnpm install --frozen-lockfile=false && corepack pnpm dev"
     environment:
       # For local docker execution, COMPOSE_DATABASE_URL defaults to local Postgres port.
       # Set DATABASE_URL in your shell/.env to override.
