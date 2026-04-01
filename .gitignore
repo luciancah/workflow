@@ -3,3 +3,5 @@ node_modules
 .env.local
 pnpm-lock.yaml
 .vercel
+.pnpm-store/
+.omc/
